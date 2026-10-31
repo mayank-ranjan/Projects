@@ -1,12 +1,9 @@
 """Streamlit application backed by the Insurance Fraud Detection notebook."""
 
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-
+import joblib
 import pandas as pd
 import streamlit as st
-import joblib
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -18,16 +15,11 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
 DEFAULT_DATASET = PROJECT_DIR / "insurance_claims.csv"
-DEFAULT_TEST_DATASET = PROJECT_DIR / "insurance_claims_test.csv"
 MODEL_DIR = PROJECT_DIR / "model"
 MODEL_FILES = {
     "Logistic Regression": "logistic_regression.joblib",
@@ -69,16 +61,8 @@ COLUMNS_TO_DROP = [
 ]
 
 
-def save_uploaded_file(uploaded_file):
-    """Persist an uploaded CSV briefly so pandas can read it."""
-    temporary_file = NamedTemporaryFile(delete=False, suffix=".csv")
-    temporary_file.write(uploaded_file.getvalue())
-    temporary_file.close()
-    return Path(temporary_file.name)
-
-
-def prepare_training_data(dataset):
-    """Reproduce the notebook's cleaning, encoding, split, and scaling steps."""
+def clean_dataset(dataset):
+    """Apply the notebook's cleaning and encoding steps."""
     data = dataset.copy()
     data.replace(r"^[^A-Za-z0-9\s]+$", pd.NA, regex=True, inplace=True)
     data.fillna(data.mode().iloc[0], inplace=True)
@@ -92,11 +76,16 @@ def prepare_training_data(dataset):
     data.drop(columns=COLUMNS_TO_DROP, inplace=True)
     data.drop(columns=["age", "total_claim_amount"], inplace=True)
 
-    features = data.drop(columns="fraud_reported")
     target = data["fraud_reported"].map(
         {"Y": 1, "N": 0, "Yes": 1, "No": 0}
     ).astype(int)
-    features = pd.get_dummies(features, drop_first=True)
+    features = pd.get_dummies(data.drop(columns="fraud_reported"), drop_first=True)
+    return features, target
+
+
+def prepare_training_data(dataset):
+    """Reproduce the notebook's split and scaling steps."""
+    features, target = clean_dataset(dataset)
     X_train, X_test, y_train, y_test = train_test_split(
         features,
         target,
@@ -114,27 +103,61 @@ def prepare_training_data(dataset):
     X_test_scaled[CONTINUOUS_COLUMNS] = scaler.transform(
         X_test[CONTINUOUS_COLUMNS]
     )
-    return X_train_scaled, X_test_scaled, y_train, y_test
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler
 
 
-def create_models():
-    """Create the five models with the settings used in the notebook."""
+def prepare_uploaded_test_data(
+    dataset, training_features, scaler, required_columns
+):
+    """Prepare labeled raw or notebook-exported test data."""
+    if "fraud_reported" not in dataset.columns:
+        raise ValueError(
+            "The uploaded CSV must contain the fraud_reported target column."
+        )
+    if set(training_features.columns).issubset(dataset.columns):
+        target = dataset["fraud_reported"].map(
+            {"Y": 1, "N": 0, "Yes": 1, "No": 0}
+        )
+        target = target.fillna(pd.to_numeric(dataset["fraud_reported"], errors="coerce"))
+        if target.isna().any():
+            raise ValueError(
+                "fraud_reported must contain Y/N, Yes/No, or 0/1 values."
+            )
+        return dataset[training_features.columns].copy(), target.astype(int)
+
+    missing_columns = sorted(set(required_columns) - set(dataset.columns))
+    if missing_columns:
+        raise ValueError(
+            "The uploaded CSV is missing required input columns: "
+            f"{missing_columns}"
+        )
+    features, target = clean_dataset(dataset)
+    features = features.reindex(columns=training_features.columns, fill_value=0)
+    features[CONTINUOUS_COLUMNS] = scaler.transform(features[CONTINUOUS_COLUMNS])
+    return features, target
+
+
+def load_saved_models():
+    """Load the five fitted model artifacts required by the assignment."""
+    missing = [
+        MODEL_DIR / filename
+        for filename in MODEL_FILES.values()
+        if not (MODEL_DIR / filename).is_file()
+    ]
+    if missing:
+        names = ", ".join(path.name for path in missing)
+        raise FileNotFoundError(
+            f"Missing saved model files: {names}. "
+            "Run train_models.py locally and commit model/*.joblib."
+        )
     return {
-        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        "Decision Tree Classifier": DecisionTreeClassifier(random_state=42),
-        "K-Nearest Neighbor Classifier": KNeighborsClassifier(n_neighbors=5),
-        "Naive Bayes Classifier": GaussianNB(),
-        "Support Vector Machine": SVC(
-            kernel="rbf", probability=True, random_state=42
-        ),
+        model_name: joblib.load(MODEL_DIR / filename)
+        for model_name, filename in MODEL_FILES.items()
     }
 
 
-def evaluate_model(model_name, model, X_train, X_test, y_train, y_test):
-    """Fit, save, and evaluate one model."""
-    model.fit(X_train, y_train)
-    MODEL_DIR.mkdir(exist_ok=True)
-    joblib.dump(model, MODEL_DIR / MODEL_FILES[model_name])
+def evaluate_model(model, X_test, y_test):
+    """Evaluate a saved model without fitting it on test data."""
     predictions = model.predict(X_test)
     probabilities = model.predict_proba(X_test)[:, 1]
     metrics = {
@@ -145,7 +168,7 @@ def evaluate_model(model_name, model, X_train, X_test, y_train, y_test):
         "F1 Score": f1_score(y_test, predictions, zero_division=0),
         "MCC Score": matthews_corrcoef(y_test, predictions),
     }
-    return model, predictions, metrics
+    return predictions, metrics
 
 
 def main():
@@ -161,59 +184,43 @@ def main():
     )
 
     uploaded_file = st.file_uploader(
-        "Upload the notebook-generated test CSV (optional)",
+        "Upload labeled test data (CSV)",
         type=["csv"],
         help=(
-            "Run the final notebook export cell first. The uploaded file must "
-            "contain the processed test feature columns and no target column."
+            "Upload insurance_claims_test.csv from the notebook, or another "
+            "CSV containing the original input columns and fraud_reported. "
+            "Without an upload, the app uses the notebook's in-memory held-out "
+            "test split. Saved models are evaluated without retraining."
         ),
     )
 
-    temporary_path = None
-    test_path = DEFAULT_TEST_DATASET
-    if uploaded_file is not None:
-        temporary_path = save_uploaded_file(uploaded_file)
-        test_path = temporary_path
-
     try:
         raw_data = pd.read_csv(DEFAULT_DATASET)
-        X_train, notebook_X_test, y_train, y_test = prepare_training_data(raw_data)
-        if test_path.exists():
-            test_features = pd.read_csv(test_path)
-            missing_columns = set(X_train.columns) - set(test_features.columns)
-            extra_columns = set(test_features.columns) - set(X_train.columns)
-            if missing_columns or extra_columns:
-                raise ValueError(
-                    "Test CSV columns do not match the notebook export. "
-                    f"Missing: {sorted(missing_columns)}; "
-                    f"unexpected: {sorted(extra_columns)}"
-                )
-            if len(test_features) != len(y_test):
-                raise ValueError(
-                    "Test CSV must contain exactly the 20% held-out test split "
-                    f"({len(y_test)} rows); received {len(test_features)} rows."
-                )
-            test_features = test_features[X_train.columns]
+        X_train, notebook_X_test, y_train, notebook_y_test, scaler = (
+            prepare_training_data(raw_data)
+        )
+        if uploaded_file is not None:
+            uploaded_data = pd.read_csv(uploaded_file)
+            test_features, y_test = prepare_uploaded_test_data(
+                uploaded_data, X_train, scaler, raw_data.columns
+            )
+            test_data_label = "uploaded labeled test data"
         else:
             st.info(
-                "insurance_claims_test.csv is not present yet; using the in-memory "
-                "notebook test split. Run the final notebook cell to create it."
+                "Upload a labeled CSV to evaluate the saved models on your own "
+                "test data. The default view uses the notebook test split."
             )
-            test_features = notebook_X_test
+            test_features, y_test = notebook_X_test, notebook_y_test
+            test_data_label = "notebook test split"
+        models = load_saved_models()
     except (OSError, KeyError, ValueError, TypeError, pd.errors.ParserError) as error:
         st.error(f"Could not prepare the notebook data: {error}")
         return
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
 
-    models = create_models()
     results = []
     predictions = {}
     for model_name, model in models.items():
-        _, prediction, metrics = evaluate_model(
-            model_name, model, X_train, test_features, y_train, y_test
-        )
+        prediction, metrics = evaluate_model(model, test_features, y_test)
         results.append({"Model": model_name, **metrics})
         predictions[model_name] = prediction
 
@@ -231,7 +238,8 @@ def main():
     selected_model_name = st.sidebar.selectbox(
         "Choose a model to inspect", options=list(models)
     )
-    st.subheader("Notebook test-data predictions")
+    st.subheader("Test-data predictions")
+    st.caption(f"Using {test_data_label}")
     st.caption(f"{len(test_features):,} processed test rows")
     st.dataframe(
         results_df.style.format({column: "{:.4f}" for column in metric_columns}),
