@@ -71,7 +71,7 @@ report.
 
 ## Run locally
 
-From the repository root, use Python 3.11 or newer:
+From inside the `ML_Assignment_2` folder, use Python 3.11 or newer:
 
 ```powershell
 python -m venv .venv
