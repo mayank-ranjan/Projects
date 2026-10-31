@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile
 
 import pandas as pd
 import streamlit as st
+import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
@@ -27,6 +28,14 @@ from sklearn.tree import DecisionTreeClassifier
 PROJECT_DIR = Path(__file__).resolve().parent
 DEFAULT_DATASET = PROJECT_DIR / "insurance_claims.csv"
 DEFAULT_TEST_DATASET = PROJECT_DIR / "insurance_claims_test.csv"
+MODEL_DIR = PROJECT_DIR / "model"
+MODEL_FILES = {
+    "Logistic Regression": "logistic_regression.joblib",
+    "Decision Tree Classifier": "decision_tree.joblib",
+    "K-Nearest Neighbor Classifier": "k_nearest_neighbors.joblib",
+    "Naive Bayes Classifier": "naive_bayes.joblib",
+    "Support Vector Machine": "support_vector_machine.joblib",
+}
 CONTINUOUS_COLUMNS = [
     "months_as_customer",
     "policy_deductable",
@@ -121,9 +130,11 @@ def create_models():
     }
 
 
-def evaluate_model(model, X_train, X_test, y_train, y_test):
-    """Fit a model and return its predictions, probabilities, and metrics."""
+def evaluate_model(model_name, model, X_train, X_test, y_train, y_test):
+    """Fit, save, and evaluate one model."""
     model.fit(X_train, y_train)
+    MODEL_DIR.mkdir(exist_ok=True)
+    joblib.dump(model, MODEL_DIR / MODEL_FILES[model_name])
     predictions = model.predict(X_test)
     probabilities = model.predict_proba(X_test)[:, 1]
     metrics = {
@@ -201,7 +212,7 @@ def main():
     predictions = {}
     for model_name, model in models.items():
         _, prediction, metrics = evaluate_model(
-            model, X_train, test_features, y_train, y_test
+            model_name, model, X_train, test_features, y_train, y_test
         )
         results.append({"Model": model_name, **metrics})
         predictions[model_name] = prediction

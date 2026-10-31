@@ -1,10 +1,16 @@
 # Insurance Claims Fraud Detection
 
-This project implements the BITS WILP Machine Learning Assignment 2
-classification workflow and deploys the same workflow as a Streamlit
-application. The notebook is the canonical implementation: its final cells
-select the overall winner and export the processed held-out test data used by
-`app.py`.
+## Project overview
+
+This project implements the BITS WILP M.Tech (AIML) Machine Learning
+Assignment 2 classification workflow and deploys it as an interactive
+Streamlit application. The application trains and compares five classifiers
+for detecting fraudulent insurance claims, displays the required evaluation
+metrics, and provides predictions for the held-out test data.
+
+The notebook is the canonical experiment implementation. The Streamlit app
+reuses its preprocessing steps, model settings, train/test split, and
+evaluation approach.
 
 ## Dataset
 
@@ -69,6 +75,83 @@ For every model, the application displays:
 For the selected model, it also displays a confusion matrix and classification
 report.
 
+### Results from the notebook test split
+
+The notebook evaluates the models on the same stratified 20% test split used
+by the application:
+
+| Model | Accuracy | AUC | Precision | Recall | F1 | MCC |
+|---|---:|---:|---:|---:|---:|---:|
+| Logistic Regression | 0.8350 | 0.7986 | 0.7000 | 0.5714 | 0.6292 | 0.5290 |
+| Decision Tree Classifier | 0.6950 | 0.5706 | — | — | 0.3441 | 0.1465 |
+| K-Nearest Neighbor Classifier | 0.7200 | — | — | 0.1837 | 0.2432 | — |
+| Naive Bayes Classifier | 0.5900 | — | — | 0.7347 | 0.4675 | — |
+| Support Vector Machine | — | 0.7948 | 0.7500 | 0.0612 | 0.1132 | — |
+
+The overall winner is **Logistic Regression**, selected by descending F1
+score, MCC score, and accuracy. The values above are the reported notebook
+results; the deployed application recomputes and displays the complete metric
+table.
+
+### Model observations
+
+- **Logistic Regression:** Best overall performer, with the highest accuracy
+  (83.5%), AUC (0.7986), F1 score (0.6292), and MCC (0.5290). It provides the
+  best balance between detecting fraud and avoiding false alarms.
+- **Decision Tree Classifier:** Weak performance overall, with 69.5% accuracy
+  and an AUC of 0.5706. Its low F1 score (0.3441) and MCC (0.1465) indicate
+  limited and imbalanced fraud detection.
+- **K-Nearest Neighbor Classifier:** Moderate accuracy (72.0%), but poor fraud
+  detection. Recall is only 18.37% and the F1 score is 0.2432, so it misses
+  most fraudulent claims in this configuration.
+- **Naive Bayes Classifier:** Best at finding fraudulent claims, with the
+  highest recall (73.47%), but it produces many false positives. This results
+  in the lowest accuracy (59.0%) and a modest F1 score (0.4675).
+- **Support Vector Machine:** Good ranking ability (AUC 0.7948) and precision
+  (75.0%), but extremely low recall (6.12%) and F1 score (0.1132) mean that it
+  misses almost all fraudulent claims.
+
+## Saved trained models
+
+The `model/` directory is included to satisfy the requirement for saved
+trained models for all five classifiers. It contains one `.joblib` artifact
+per classifier:
+
+```text
+model/
+├── logistic_regression.joblib
+├── decision_tree.joblib
+├── k_nearest_neighbors.joblib
+├── naive_bayes.joblib
+└── support_vector_machine.joblib
+```
+
+The app fits each model using the training data and saves the fitted estimator
+to the corresponding file. The binary files cannot contain comments; the
+model-to-file mapping and artifact instructions are documented in
+`model/README.md`.
+
+If the artifacts are not already present after cloning the repository, run the
+app once locally and commit the generated files before submission. The app
+continues to train from `insurance_claims.csv` so that preprocessing and
+metrics are reproducible; the saved artifacts are deployment and submission
+outputs rather than a replacement for the labelled training data.
+
+## Repository contents
+
+```text
+ML_Assignment_2/
+├── app.py
+├── requirements.txt
+├── insurance_claims.csv
+├── insurance_claims_test.csv
+├── Insurance Fraud Detection.ipynb
+├── model/
+│   ├── README.md
+│   └── *.joblib
+└── README.md
+```
+
 ## Run locally
 
 From inside the `ML_Assignment_2` folder, use Python 3.11 or newer:
@@ -83,6 +166,10 @@ streamlit run app.py
 Open the local URL printed by Streamlit. The default dataset is loaded
 automatically. A CSV uploader is also available for a notebook-generated
 test-only CSV with the same processed feature schema.
+
+To generate or refresh all five saved model artifacts, run the app once and
+allow the initial model evaluation to complete. The artifacts are written to
+the `model/` directory.
 
 ## Streamlit Community Cloud deployment
 
@@ -108,6 +195,17 @@ The GitHub repository URL and deployed Streamlit URL must be added to the
 final assignment PDF before submission. A screenshot of execution on BITS
 Virtual Lab is also required by the assignment.
 
+## Assignment submission checklist
+
+- GitHub repository link containing the complete source code.
+- `requirements.txt` containing the Python dependencies.
+- `README.md` containing the project description, dataset details, models,
+  metrics, execution instructions, deployment instructions, and file layout.
+- Training and test CSV files used by the experiment.
+- `model/` containing saved trained models for all five classifiers.
+- Live Streamlit Community Cloud app link that opens the interactive frontend.
+- Screenshot showing execution on BITS Virtual Lab.
+
 ## Project files
 
 - `app.py`: Streamlit user interface using the notebook-aligned workflow and
@@ -118,3 +216,4 @@ Virtual Lab is also required by the assignment.
 - `insurance_claims_test.csv`: Processed held-out test features generated by
   the notebook for Streamlit predictions.
 - `requirements.txt`: Python dependencies for local and cloud deployment.
+- `model/`: Saved `.joblib` artifacts for all five trained classifiers.
