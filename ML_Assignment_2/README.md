@@ -83,15 +83,15 @@ by the application:
 | Model | Accuracy | AUC | Precision | Recall | F1 | MCC |
 |---|---:|---:|---:|---:|---:|---:|
 | Logistic Regression | 0.8350 | 0.7986 | 0.7000 | 0.5714 | 0.6292 | 0.5290 |
-| Decision Tree Classifier | 0.6950 | 0.5706 | — | — | 0.3441 | 0.1465 |
-| K-Nearest Neighbor Classifier | 0.7200 | — | — | 0.1837 | 0.2432 | — |
-| Naive Bayes Classifier | 0.5900 | — | — | 0.7347 | 0.4675 | — |
-| Support Vector Machine | — | 0.7948 | 0.7500 | 0.0612 | 0.1132 | — |
+| Decision Tree Classifier | 0.6950 | 0.5706 | 0.3636 | 0.3265 | 0.3441 | 0.1465 |
+| K-Nearest Neighbor Classifier | 0.7200 | 0.6329 | 0.3600 | 0.1837 | 0.2432 | 0.1011 |
+| Naive Bayes Classifier | 0.5900 | 0.7058 | 0.3429 | 0.7347 | 0.4675 | 0.2392 |
+| Support Vector Machine | 0.7650 | 0.7948 | 0.7500 | 0.0612 | 0.1132 | 0.1677 |
 
 The overall winner is **Logistic Regression**, selected by descending F1
 score, MCC score, and accuracy. The values above are the reported notebook
-results; the deployed application recomputes and displays the complete metric
-table.
+results; the deployed application recomputes and displays the same complete
+metric table.
 
 ### Model observations
 
