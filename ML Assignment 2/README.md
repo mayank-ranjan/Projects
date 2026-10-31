@@ -71,7 +71,7 @@ report.
 
 ## Run locally
 
-Use Python 3.10 or newer:
+Use Python 3.11:
 
 ```powershell
 python -m venv .venv
@@ -99,6 +99,9 @@ test-only CSV with the same processed feature schema.
 6. Click **Deploy**.
 7. Open the deployed URL and verify the CSV uploader, model dropdown,
    evaluation table, and confusion matrix/classification report.
+
+The dependency versions in `requirements.txt` are pinned to compatible wheels.
+Keep `requirements.txt` in the repository root used when creating the app.
 
 The GitHub repository URL and deployed Streamlit URL must be added to the
 final assignment PDF before submission. A screenshot of execution on BITS
