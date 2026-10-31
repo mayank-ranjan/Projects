@@ -71,7 +71,7 @@ report.
 
 ## Run locally
 
-From the repository root, use Python 3.11:
+From the repository root, use Python 3.11 or newer:
 
 ```powershell
 python -m venv .venv
@@ -101,9 +101,9 @@ test-only CSV with the same processed feature schema.
    evaluation table, and confusion matrix/classification report.
 
 The dependency versions in the repository-root `requirements.txt` are pinned
-to compatible wheels. Keeping this file at the repository root avoids
-dependency-path parsing problems caused by the space in the `ML Assignment 2`
-folder name.
+to versions with wheels for current Streamlit Cloud Python runtimes.
+Keeping this file at the repository root avoids dependency-path parsing
+problems caused by the space in the `ML Assignment 2` folder name.
 
 The GitHub repository URL and deployed Streamlit URL must be added to the
 final assignment PDF before submission. A screenshot of execution on BITS
