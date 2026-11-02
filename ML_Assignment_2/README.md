@@ -2,13 +2,13 @@
 
 ## Project overview
 
-This project implements the BITS WILP M.Tech (AIML) Machine Learning
-Assignment 2 classification workflow and deploys it as an interactive
+This project is related to the the BITS WILP M.Tech (AIML) Machine Learning
+Assignment 2 classification problem and deploys it as an interactive
 Streamlit application. The application trains and compares five classifiers
 for detecting fraudulent insurance claims, displays the required evaluation
 metrics, and provides predictions for the held-out test data.
 
-The notebook is the canonical experiment implementation. The Streamlit app
+The notebook contains the code for implementation of models for classification . The Streamlit app
 reuses its preprocessing steps, model settings, train/test split, and
 evaluation approach.
 
