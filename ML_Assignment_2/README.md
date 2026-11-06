@@ -1,18 +1,19 @@
 # Insurance Claims Fraud Detection
 
-## Project overview
+## a. Problem statement
 
-This project is related to the the BITS WILP M.Tech (AIML) Machine Learning
-Assignment 2 classification problem and deploys it as an interactive
-Streamlit application. The application trains and compares five classifiers
-for detecting fraudulent insurance claims, displays the required evaluation
-metrics, and provides predictions for the held-out test data.
+Insurance claim fraud increases financial losses and makes it difficult to
+identify legitimate claims efficiently. This project builds a binary
+classification solution to detect fraudulent insurance claims and deploys it
+as an interactive Streamlit application. The application compares five
+classifiers, reports the required evaluation metrics, and predicts labels for
+held-out test data.
 
-The notebook contains the code for implementation of models for classification . The Streamlit app
-reuses its preprocessing steps, model settings, train/test split, and
-evaluation approach.
+The notebook contains the implementation of the classification models. The
+Streamlit app reuses its preprocessing steps, model settings, train/test
+split, and evaluation approach.
 
-## Dataset
+## b. Dataset description
 
 The application uses the public Kaggle insurance claims dataset:
 
@@ -45,7 +46,11 @@ This file contains the processed held-out test features and the
 `fraud_reported` target column, so it can be uploaded to the Streamlit app for
 predictions and evaluation metrics.
 
-## Models and required metrics
+## c. GitHub repository link
+
+https://github.com/mayank-ranjan/Projects/tree/main/ML_Assignment_2
+
+## d. Models used and evaluation metrics
 
 The same processed dataset is used for all five required models:
 
@@ -75,12 +80,12 @@ For every model, the application displays:
 For the selected model, it also displays a confusion matrix and classification
 report.
 
-### Results from the notebook test split
+### Comparison table: results from the notebook test split
 
 The notebook evaluates the models on the same stratified 20% test split used
 by the application:
 
-| Model | Accuracy | AUC | Precision | Recall | F1 | MCC |
+| ML Model Name | Accuracy | AUC | Precision | Recall | F1 | MCC |
 |---|---:|---:|---:|---:|---:|---:|
 | Logistic Regression | 0.8350 | 0.7986 | 0.7000 | 0.5714 | 0.6292 | 0.5290 |
 | Decision Tree Classifier | 0.6950 | 0.5706 | 0.3636 | 0.3265 | 0.3441 | 0.1465 |
@@ -88,28 +93,19 @@ by the application:
 | Naive Bayes Classifier | 0.5900 | 0.7058 | 0.3429 | 0.7347 | 0.4675 | 0.2392 |
 | Support Vector Machine | 0.7650 | 0.7948 | 0.7500 | 0.0612 | 0.1132 | 0.1677 |
 
-The overall winner is **Logistic Regression**, selected by descending F1
-score, MCC score, and accuracy. The values above are the reported notebook
-results; the deployed application recomputes and displays the same complete
-metric table.
+The values above are the reported notebook results; the deployed application
+recomputes and displays the same complete metric table.
 
-### Model observations
+### Observations on model performance
 
-- **Logistic Regression:** Best overall performer, with the highest accuracy
-  (83.5%), AUC (0.7986), F1 score (0.6292), and MCC (0.5290). It provides the
-  best balance between detecting fraud and avoiding false alarms.
-- **Decision Tree Classifier:** Weak performance overall, with 69.5% accuracy
-  and an AUC of 0.5706. Its low F1 score (0.3441) and MCC (0.1465) indicate
-  limited and imbalanced fraud detection.
-- **K-Nearest Neighbor Classifier:** Moderate accuracy (72.0%), but poor fraud
-  detection. Recall is only 18.37% and the F1 score is 0.2432, so it misses
-  most fraudulent claims in this configuration.
-- **Naive Bayes Classifier:** Best at finding fraudulent claims, with the
-  highest recall (73.47%), but it produces many false positives. This results
-  in the lowest accuracy (59.0%) and a modest F1 score (0.4675).
-- **Support Vector Machine:** Good ranking ability (AUC 0.7948) and precision
-  (75.0%), but extremely low recall (6.12%) and F1 score (0.1132) mean that it
-  misses almost all fraudulent claims.
+| ML Model Name | Observation about model performance |
+|---|---|
+| Logistic Regression | Best overall performer, with the highest accuracy (83.5%), AUC (0.7986), F1 score (0.6292), and MCC (0.5290). It provides the best balance between detecting fraud and avoiding false alarms. |
+| Decision Tree Classifier | Weak performance overall, with 69.5% accuracy and an AUC of 0.5706. Its low F1 score (0.3441) and MCC (0.1465) indicate limited and imbalanced fraud detection. |
+| K-Nearest Neighbor Classifier | Moderate accuracy (72.0%), but poor fraud detection. Recall is only 18.37% and the F1 score is 0.2432, so it misses most fraudulent claims in this configuration. |
+| Naive Bayes | Best at finding fraudulent claims, with the highest recall (73.47%), but it produces many false positives. This results in the lowest accuracy (59.0%) and a modest F1 score (0.4675). |
+| Support Vector Machine | Good ranking ability (AUC 0.7948) and precision (75.0%), but extremely low recall (6.12%) and F1 score (0.1132) mean that it misses almost all fraudulent claims. |
+| **Overall Winner** | **Logistic Regression**, selected by descending F1 score, MCC score, and accuracy. |
 
 ## Saved trained models
 
